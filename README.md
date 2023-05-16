@@ -4,3 +4,7 @@ This Repository contains a simulation for Images beeing represented and encrypte
 
 # Set Up
 Before installing we need to check the Python version: 3.7.15 (this was tested on)
+Then just use the command make setup to install all dependencies with pip
+
+# Run
+To Run the simulation just use the command make run
