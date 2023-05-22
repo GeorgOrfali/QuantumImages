@@ -28,9 +28,6 @@ class QuantumImage:
         qubitAmountHeight = math.ceil(math.log(imageHeight, 2))
         self.yqubits = qubitAmountHeight
         qubitAmountWidth = math.ceil(math.log(imageWidth, 2))
-        if (qubitAmountHeight+qubitAmountWidth) < colorQubit:
-            qubitAmountWidth = qubitAmountWidth + 1
-
         self.xqubits = qubitAmountWidth
 
         self.nqubits = qubitAmountHeight + qubitAmountWidth + colorQubit
@@ -42,8 +39,6 @@ class QuantumImage:
         qubitAmountHeight = math.ceil(math.log(len(array), 2))
         self.yqubits = qubitAmountHeight
         qubitAmountWidth = math.ceil(math.log(len(array[0]), 2))
-        if (qubitAmountHeight+qubitAmountWidth) < colorQubit:
-            qubitAmountWidth = qubitAmountWidth + 1
         self.xqubits = qubitAmountWidth
         self.nqubits = qubitAmountHeight + qubitAmountWidth + colorQubit
 
@@ -65,10 +60,10 @@ class QuantumImage:
         posQubits = self.xqubits + self.yqubits
         if self.cqubits > posQubits:
             for p in range(posQubits):
-                self.posQubits.append(2 * p)
+                self.posQubits.append(1+2 * p)
 
             for c in range(posQubits):
-                self.colorQubits.append(1+2 * c)
+                self.colorQubits.append(2 * c)
 
             for cp in range(posQubits * 2, self.nqubits):
                 self.colorQubits.append(cp)
@@ -97,49 +92,42 @@ class QuantumImage:
         self.states = counts
         self.removeMeasureCircuit()
 
+    def getStatesForMoreColor(self):
+        self.states = []
+        self.measureCircuit()
+        self.measureCircuit()
+        simulator = Aer.get_backend('qasm_simulator')
+        circ = transpile(self.circuit, simulator)
+        result = simulator.run(self.circuit).result()
+        counts = result.get_counts(self.circuit)
+        self.states = counts
+        self.removeMeasureCircuit()
+        self.removeMeasureCircuit()
+
     def printStates(self):
         print([n for n in self.states])
         print("---------------------------------------------------")
 
     def removeMeasureCircuit(self):
-        if len(self.posQubits) >= self.cqubits:
-            number = 3 + self.cqubits + self.nqubits
-            lenG = len(self.circuit.data) - 1
-            for i in range(number):
-                self.circuit.data.pop(lenG - i)
-        else:
-            number = 3 + len(self.posQubits) + self.nqubits
-            lenG = len(self.circuit.data) - 1
-            for i in range(number):
-                self.circuit.data.pop(lenG - i)
+        number = 3 + self.cqubits + self.nqubits
+        lenG = len(self.circuit.data) - 1
+        for i in range(number):
+            self.circuit.data.pop(lenG - i)
 
     def measureCircuit(self):
         self.circuit.barrier()
         # First add the hadamard gates to compute from diagonal to computational basis
-        if len(self.posQubits) >= len(self.colorQubits):
-            for c in range(len(self.colorQubits)):
-                self.circuit.h(self.colorQubits[c])
-        else:
-            for p in range(len(self.posQubits)):
-                self.circuit.h(self.posQubits[p])
-
+        for c in range(len(self.colorQubits)):
+            self.circuit.h(self.colorQubits[c])
         self.circuit.barrier()
         # Add the measurements, first add for all colorQubits
         n = 0
-        if len(self.posQubits) >= len(self.colorQubits):
-            for c1 in range(len(self.colorQubits)):
-                self.circuit.measure(self.colorQubits[c1], n)
-                n = n + 1
-            for c2 in range(len(self.posQubits)):
-                self.circuit.measure(self.posQubits[c2], n)
-                n = n + 1
-        else:
-            for c2 in range(len(self.posQubits)):
-                self.circuit.measure(self.posQubits[c2], n)
-                n = n + 1
-            for c1 in range(len(self.colorQubits)):
-                self.circuit.measure(self.colorQubits[c1], n)
-                n = n + 1
+        for c1 in range(len(self.colorQubits)):
+            self.circuit.measure(self.colorQubits[c1], n)
+            n = n + 1
+        for c2 in range(len(self.posQubits)):
+            self.circuit.measure(self.posQubits[c2], n)
+            n = n + 1
         self.circuit.barrier()
 
     def getCurrentClusterColorBits(self, pos):
@@ -182,19 +170,11 @@ class QuantumImage:
     def encodeColor(self, x, y, color):
         self.circuit.barrier()
         pos = y+x
-        if len(self.posQubits) >= len(self.colorQubits):
-            curColor = self.getCurrentClusterColorBits(pos)
-            if curColor != color:
-                self.addXGatesToPos(pos)
-                self.addColorEncodeToCircuit(curColor, self.posQubits, self.colorQubits, color)
-                self.addXGatesToPos(pos)
-        else:
-            curPos = self.getCurrentClusterPositionBits(color)
-            print("CurPos: ", curPos, " pos: ", pos, " color: ", color)
-            if curPos != pos:
-                self.addXGatesToColor(color)
-                self.addColorEncodeToCircuit(curPos, self.colorQubits, self.posQubits, pos)
-                self.addXGatesToColor(color)
+        curColor = self.getCurrentClusterColorBits(pos)
+        if curColor != color:
+            self.addXGatesToPos(pos)
+            self.addColorEncodeToCircuit(curColor, self.posQubits, self.colorQubits, color)
+            self.addXGatesToPos(pos)
         self.circuit.barrier()
 
     def addColorEncodeToCircuit(self, CurrentQubits, ControlQubits, TargetQubits, n):

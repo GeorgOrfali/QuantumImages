@@ -65,12 +65,11 @@ class QuantumImageTest:
                                         self.decimal_to_binary(yi, self.qImage.yqubits),
                                         color)
         #After enconding set all redundant colors or position to an dump state
-        self.encodeRedundancies()
-        self.qImage.getStates()
-        if len(self.qImage.posQubits) >= len(self.qImage.colorQubits):
-            self.qImageArray = sorted(self.qImage.states, key=lambda x: x[:position])
+        if len(self.qImage.posQubits) >= self.qImage.cqubits:
+            self.qImage.getStates()
         else:
-            self.qImageArray = sorted(self.qImage.states, key=lambda x: x[len(self.qImage.colorQubits):])
+            self.qImage.getStates()
+        self.qImageArray = sorted(self.qImage.states, key=lambda x: x[:position])
 
     def encodeRedundancies(self):
         countPixels = sum(len(sublist) for sublist in self.image)
