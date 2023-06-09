@@ -2,6 +2,7 @@ from QuantumImage import *
 from QuantumUtil import *
 from QuantumImageEncryption import *
 
+
 class QuantumImageTest:
     image = []
     qImageArray = []
@@ -75,32 +76,6 @@ class QuantumImageTest:
         self.qKeyImage = QuantumKeyImage(self.qImage.circuit.width, self.qImage.circuit.height, self.color)
         self.qKeyImage.qImage.circuit.getStates()
         self.qKeyImageArray = sorted(self.qKeyImage.qImage.circuit.states, key=lambda x: x[:position])
-
-
-    def encodeRedundancies(self):
-        countPixels = sum(len(sublist) for sublist in self.image)
-        if len(self.qImage.circuit.states) > countPixels:
-            if self.qImage.circuit.cqubits > len(self.qImage.circuit.posQubits):
-                print("Encode Redundancies!")
-                # Copy array
-                states = list(self.qImage.circuit.states)
-                # change all unused to redudant information for position 1111 for color 0000
-                for column in self.image:
-                    for color in column:
-                        found = False
-                for state in states:
-                    found = False
-                    for column in self.image:
-                        for color in column:
-                            if color == state[:self.qImage.circuit.cqubits]:
-                                found = True
-                    if not found:
-                        # Get max value for x and max value for y in decimal
-                        x = 2 ** self.qImage.circuit.xqubits - 1
-                        y = 2 ** self.qImage.circuit.yqubits - 1
-                        self.qImage.encodeColor(self.util.decimal_to_binary(x, self.qImage.circuit.xqubits),
-                                                self.util.decimal_to_binary(y, self.qImage.circuit.yqubits),
-                                                state[:self.qImage.circuit.cqubits])
 
     def generate_random_image(self, width, height, color):
         self.image = []

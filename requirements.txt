@@ -1,4 +1,3 @@
-qiskit
 pillow
 numpy
 pylatexenc
