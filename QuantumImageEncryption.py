@@ -14,6 +14,6 @@ class QuantumKeyImage:
         self.circuit = self.qImage.circuit
         for y in range(self.qImage.circuit.height):
             for x in range(self.qImage.circuit.width):
-                self.qImage.encodeColor(self.util.decimal_to_binary(x, self.qImage.circuit.xqubits),
-                                        self.util.decimal_to_binary(y, self.qImage.circuit.yqubits),
+                self.qImage.encodeColor(self.util.decimal_to_binary(x, self.qImage.circuit.xQubit),
+                                        self.util.decimal_to_binary(y, self.qImage.circuit.yQubit),
                                         self.util.generate_random_bit_string(color))
