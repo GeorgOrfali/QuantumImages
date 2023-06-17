@@ -72,14 +72,14 @@ class GUI(tk.Frame):
 
     def startSimulation(self):
         self.QimageTest.TestCasesWithArrayOutput()
-        self.QGImage.configure(text=self.QimageTest.getQuantumImage(self.QimageTest.qImage,
+        self.QGImage.configure(text=self.QimageTest.getQuantumImage(self.QimageTest.qImage.qImage,
                                                                     self.QimageTest.qImageArray))
 
-        self.QKGImage.configure(text=self.QimageTest.getQuantumImage(self.QimageTest.qKeyImage,
+        self.QKGImage.configure(text=self.QimageTest.getQuantumImage(self.QimageTest.qImage.qKeyImage,
                                                                      self.QimageTest.qKeyImageArray))
 
-
     def generateImage(self):
-        self.QimageTest.generate_random_image(int(self.widthBox.get()), int(self.heightBox.get()),
-                                              int(self.ColorBox.get()))
+        self.QimageTest.image = self.QimageTest.generate_random_image(int(self.widthBox.get()),
+                                                                      int(self.heightBox.get()),
+                                                                      int(self.ColorBox.get()))
         self.OGImage.configure(text=self.QimageTest.getImage())

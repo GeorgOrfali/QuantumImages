@@ -27,6 +27,7 @@ class QuantumGates:
             countAmountOfOperations = 0
             workQubitsCounter = 0
             i = 0
+            #print("Control Qubits:", controlQubits, "Work Qubits: ", workQubits, " targetQubit:", targetQubit)
             while i < len(controlQubits):
                 if i == 0:
                     Gates.append(self.ccx([controlQubits[0], controlQubits[1]], workQubits[workQubitsCounter]))
@@ -34,12 +35,7 @@ class QuantumGates:
                     workQubitsCounter += 1
                     i += 2
                 elif i == len(controlQubits) - 1:
-                    # if len(controlQubits) % 2 == 0:
-                    #    Gates.append(self.cx(workQubits[-1], targetQubit))
-                    #    countAmountOfOperations += 1
-                    #    i += 1
-                    # else:
-                    Gates.append(self.ccx([controlQubits[-1], workQubits[-1]], targetQubit))
+                    Gates.append(self.ccx([controlQubits[-1], workQubits[workQubitsCounter-1]], targetQubit))
                     countAmountOfOperations += 1
                     i += 1
                 else:
@@ -48,6 +44,7 @@ class QuantumGates:
                     countAmountOfOperations += 1
                     workQubitsCounter += 1
                     i += 1
+                #print("MCX Gates: ", Gates, "i:", i)
 
             # The second step is to debuild it
             reverse = []
@@ -55,6 +52,7 @@ class QuantumGates:
                 reverse.append(self.operations[-2 - o])
 
             for r in reverse:
+                Gates.append(r)
                 self.operations.append(r)
 
         else:

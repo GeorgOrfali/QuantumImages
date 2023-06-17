@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from QuantumGates import *
 
 
 class QuantumImageCircuit:
@@ -17,7 +18,11 @@ class QuantumImageCircuit:
     positionQubits = []
     colorQubits = []
 
-    def __init__(self, width, height, colorQubit):
+    qGates = None
+    name = ''
+
+    def __init__(self, name, width, height, colorQubit):
+        self.name = name
         self.colorQubit = colorQubit
         self.yQubit = math.ceil(math.log(height, 2))
         self.xQubit = math.ceil(math.log(width, 2))
@@ -26,6 +31,8 @@ class QuantumImageCircuit:
 
         self.width = width
         self.height = height
+
+        self.qGates = QuantumGates()
 
     def clear(self):
         self.positionQubits = []
