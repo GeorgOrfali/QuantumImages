@@ -1,109 +1,139 @@
-from QuantumImage import *
-from QuantumUtil import *
-from QuantumImageEncryption import *
+from QuantumImageCircuit import *
+
+
+def encodeQuantumImage(qImageCircuit, qImage, image):
+    for yi, height in enumerate(image):
+        for xi, color in enumerate(height):
+            qImageCircuit.encodeColor(qImageCircuit.qUtil.decimal_to_binary(yi, qImage.yQubit),
+                                      qImageCircuit.qUtil.decimal_to_binary(xi, qImage.xQubit),
+                                      color, qImage)
+
+
+def checkEncoding(qImageArray, image):
+    print("Original Image: ", image)
+    print("Quantum Image: ", qImageArray)
+    if image == qImageArray:
+        print("\033[92m Picture Successfully encoded! \033[0m")
+    else:
+        print("\033[91m Picture not Successfully encoded! \033[0m")
+
 
 class QuantumImageTest:
     image = []
     qImageArray = []
     qKeyImageArray = []
+    qEncryptedImageArray = []
     qImage = None
-    qKeyImage = None
     width = 0
     height = 0
     color = 0
     util = QuantumUtil()
 
-    def TestCasesWithTerminalOutput(self, posX, posY, color):
-        print("Starting the Test!")
-        qImage = QuantumImage()
-        qImage.setCircuitWithArray(self.image, self.color)
-        print("---------------------------------------------------")
-        position = posX + posY
-        if len(position) >= len(color):
-            print('Input: ', position + color)
-        else:
-            print('Input: ', color + position)
-        qImage.circuit.getStates()
-        before = ''
-        after = ''
+    def BulkTestCases(self, width, height, color, cases):
+        succeed = 0
+        failed = 0
+        for i in range(cases):
+            fail = False
+            qImage = QuantumImageCircuit(width, height, color)
+            Image = self.generate_random_image(width, height, color)
+            qImage.getStates(qImage.qImage)
+            encodeQuantumImage(qImage, qImage.qImage, Image)
+            qImage.getStates(qImage.qImage)
 
-        if len(position) >= len(color):
-            before = qImage.getCurrentClusterBits(position)
-        else:
-            before = qImage.getCurrentClusterBits(color)
-        print("Before: ", before)
-        if before is None:
-            print('\033[91m Failed!', '\033[0m')
-            print("---------------------------------------------------")
-        qImage.encodeColor(posX, posY, color)
-        qImage.circuit.getStates()
-        if len(position) >= len(color):
-            after = qImage.getCurrentClusterBits(position)
-        else:
-            after = qImage.getCurrentClusterBits(color)
-        print("After: ", after)
-        if len(position) >= len(color):
-            if after == position + color:
-                print('\033[92m Success!', '\033[0m')
-                print("---------------------------------------------------")
+            position = qImage.qImage.xQubit + qImage.qImage.yQubit
+            qImageArray = sorted(qImage.qImage.states, key=lambda x: x[:position])
+            imageArray = self.convertImageToStatesArray(qImage, Image)
+            #print(qImageArray)
+            #print(imageArray)
+            if qImageArray != imageArray:
+                fail = True
+
+            qImage.getStates(qImage.qKeyImage)
+            keyImage = self.generate_random_image(width, height, color)
+            encodeQuantumImage(qImage, qImage.qKeyImage, keyImage)
+            qImage.getStates(qImage.qKeyImage)
+
+            qKeyImageArray = sorted(qImage.qKeyImage.states, key=lambda x: x[:position])
+            KeyImageArray = self.convertImageToStatesArray(qImage, keyImage)
+            #print(qKeyImageArray)
+            #print(KeyImageArray)
+            if qKeyImageArray != KeyImageArray:
+                fail = True
+
+            qImage.encrypt()
+            qImage.qImage.states = []
+            qImage.getStates(qImage.qImage)
+            qEncryptedImageArray = sorted(qImage.qImage.states, key=lambda x: x[:position])
+            EncryptedImage = self.generate_encrypted_Image(imageArray, KeyImageArray, position)
+            #print(qEncryptedImageArray)
+            #print(EncryptedImage)
+            if qEncryptedImageArray != EncryptedImage:
+                fail = True
+
+            if fail:
+                failed = failed + 1
             else:
-                print('\033[91m Failed!', '\033[0m')
-                print("---------------------------------------------------")
-        else:
-            if after == color + position:
-                print('\033[92m Success!', '\033[0m')
-                print("---------------------------------------------------")
-            else:
-                print('\033[91m Failed!', '\033[0m')
-                print("---------------------------------------------------")
+                succeed = succeed + 1
+        return {"succeed:": succeed, "failed": failed}
 
     def TestCasesWithArrayOutput(self):
         print("Starting the Simulation!")
-        self.qImage = QuantumImage()
-        self.qImage.setCircuitWithArray(self.image, self.color)
-        position = self.qImage.circuit.xqubits + self.qImage.circuit.yqubits
-        self.qImage.circuit.getStates()
-        for yi, height in enumerate(self.image):
-            for xi, color in enumerate(height):
-                self.qImage.encodeColor(self.util.decimal_to_binary(xi, self.qImage.circuit.xqubits),
-                                        self.util.decimal_to_binary(yi, self.qImage.circuit.yqubits),
-                                        color)
+        self.qImage = QuantumImageCircuit(len(self.image[0]), len(self.image), self.color)
 
-        self.qImage.circuit.getStates()
-        self.qImageArray = sorted(self.qImage.circuit.states, key=lambda x: x[:position])
-        # After encoding, create key Image and encrypt the Quantum Image
-        self.qKeyImage = QuantumKeyImage(self.qImage.circuit.width, self.qImage.circuit.height, self.color)
-        self.qKeyImage.qImage.circuit.getStates()
-        self.qKeyImageArray = sorted(self.qKeyImage.qImage.circuit.states, key=lambda x: x[:position])
+        self.qImage.getStates(self.qImage.qImage)
+        encodeQuantumImage(self.qImage, self.qImage.qImage, self.image)
+        self.qImage.getStates(self.qImage.qImage)
 
+        position = self.qImage.qImage.xQubit + self.qImage.qImage.yQubit
+        self.qImageArray = sorted(self.qImage.qImage.states, key=lambda x: x[:position])
+        imageArray = self.convertImageToStatesArray(self.qImage, self.image)
+        checkEncoding(self.qImageArray, imageArray)
 
-    def encodeRedundancies(self):
-        countPixels = sum(len(sublist) for sublist in self.image)
-        if len(self.qImage.circuit.states) > countPixels:
-            if self.qImage.circuit.cqubits > len(self.qImage.circuit.posQubits):
-                print("Encode Redundancies!")
-                # Copy array
-                states = list(self.qImage.circuit.states)
-                # change all unused to redudant information for position 1111 for color 0000
-                for column in self.image:
-                    for color in column:
-                        found = False
-                for state in states:
-                    found = False
-                    for column in self.image:
-                        for color in column:
-                            if color == state[:self.qImage.circuit.cqubits]:
-                                found = True
-                    if not found:
-                        # Get max value for x and max value for y in decimal
-                        x = 2 ** self.qImage.circuit.xqubits - 1
-                        y = 2 ** self.qImage.circuit.yqubits - 1
-                        self.qImage.encodeColor(self.util.decimal_to_binary(x, self.qImage.circuit.xqubits),
-                                                self.util.decimal_to_binary(y, self.qImage.circuit.yqubits),
-                                                state[:self.qImage.circuit.cqubits])
+        self.qImage.getStates(self.qImage.qKeyImage)
+        keyImage = self.generate_random_image(len(self.image[0]), len(self.image), self.color)
+        encodeQuantumImage(self.qImage, self.qImage.qKeyImage, keyImage)
+        self.qImage.getStates(self.qImage.qKeyImage)
+
+        self.qKeyImageArray = sorted(self.qImage.qKeyImage.states, key=lambda x: x[:position])
+
+        self.qImage.encrypt()
+        self.qImage.qImage.states = []
+        self.qImage.getStates(self.qImage.qImage)
+        self.qEncryptedImageArray = sorted(self.qImage.qImage.states, key=lambda x: x[:position])
+        self.qImage.getStates(self.qImage.qKeyImage)
+        print()
+        print("\033[93m Encrypted Image: \033[0m", sorted(self.qImage.qImage.states, key=lambda x: x[:position]))
+        print()
+        print("\033[93m Encrypted Key Image: \033[0m", sorted(self.qImage.qKeyImage.states, key=lambda x: x[:position]))
+        print()
+        print("\033[93m All Qubits in the circuit: \033[0m", sorted(self.qImage.getStates(self.qImage.qImage, allQubits=True), key=lambda x: x[:position]))
+        print()
+        # self.qImage.encrypt()
+        # self.qImage.getStates(self.qImage.qImage)
+        # print("Decrypted: ", sorted(self.qImage.qImage.states, key=lambda x: x[:position]))
+        #self.generate_encrypted_Image()
+
+    def generate_encrypted_Image(self, qImageArray, qKeyImageArray, pos):
+        resultArray = []
+        for i in range(len(qImageArray)):
+            states = qImageArray[i][:pos]
+            colorImg = qImageArray[i][pos:]
+            colorKeyImg = qKeyImageArray[i][pos:]
+            color = ''
+            for c in range(len(colorKeyImg)):
+                if colorKeyImg[c] == '1':
+                    if colorImg[c] == '1':
+                        color = color + '0'
+                    else:
+                        color = color + '1'
+                else:
+                    color = color + colorImg[c]
+            states = states + color
+            resultArray.append(states)
+        return resultArray
 
     def generate_random_image(self, width, height, color):
-        self.image = []
+        image = []
         self.width = width
         self.height = height
         self.color = color
@@ -112,7 +142,17 @@ class QuantumImageTest:
             row = []
             for w in range(width):
                 row.append(self.util.generate_random_bit_string(color))
-            self.image.append(row)
+            image.append(row)
+        return image
+
+    def convertImageToStatesArray(self, qImage, image):
+        result = []
+        for yi, height in enumerate(image):
+            for xi, color in enumerate(height):
+                result.append(self.util.decimal_to_binary(yi, qImage.qImage.yQubit) +
+                              self.util.decimal_to_binary(xi, qImage.qImage.xQubit) +
+                              color)
+        return result
 
     def getImage(self):
         result = ""
@@ -124,10 +164,11 @@ class QuantumImageTest:
         return result
 
     def getQuantumImage(self, qImage, qImageArray):
+        position = 0
         result = ""
         open = False
         if qImage is not None:
-            position = qImage.circuit.xqubits + qImage.circuit.yqubits
+            position = qImage.xQubit + qImage.yQubit
         for i, color in enumerate(qImageArray):
             if i % position == 0:
                 if not open:
