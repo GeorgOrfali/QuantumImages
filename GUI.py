@@ -49,10 +49,11 @@ class GUI(tk.Frame):
 
     def bulCases(self):
         result = self.QimageTest.BulkTestCases(int(self.widthBox1.get()),
-                                      int(self.heightBox1.get()),
-                                      int(self.ColorBox1.get()),
-                                      int(self.CasesBox1.get()))
+                                               int(self.heightBox1.get()),
+                                               int(self.ColorBox1.get()),
+                                               int(self.CasesBox1.get()))
         print(result)
+
     def single_testCasePage(self):
         self.bulk.destroy()
         self.single.destroy()

@@ -120,9 +120,9 @@ class QuantumImageCircuit:
 
         self.circuit.barrier()
         #Display the circuit
-        print("\033[93m Thats how the Circuit Looks like, before the measurement is not removed: \033[0m")
-        print(self.circuit.draw("text"))
-        print()
+        #print("\033[93m Thats how the Circuit Looks like, before the measurement is not removed: \033[0m")
+        #print(self.circuit.draw("text"))
+        #print()
 
     def getCurrentClusterColorBits(self, pos, image):
         for key in image.states:
@@ -149,11 +149,14 @@ class QuantumImageCircuit:
                 return key
         # return result
 
-    def addXGatesToPos(self, pos, image):
+    def addXGatesToPos(self, pos, image, sub_circuit=None):
         numberofPQubits = len(image.positionQubits) - 1
         for i, p in enumerate(pos):
             if p == '0':
-                self.circuit.x(image.positionQubits[numberofPQubits - i])
+                if sub_circuit is None:
+                    self.circuit.x(image.positionQubits[numberofPQubits - i])
+                else:
+                    sub_circuit.x(image.positionQubits[numberofPQubits - i])
 
     def addXGatesToColor(self, color, image):
         numberofCQubits = len(image.colorQubits) - 1
@@ -169,6 +172,7 @@ class QuantumImageCircuit:
                 self.circuit.x(self.qKeyImage.positionQubits[nPQubits - i])
 
     def encodeColor(self, x, y, color, image):
+        startIndex = len(self.circuit.data)
         self.circuit.barrier()
         pos = x + y
         curColor = self.getCurrentClusterColorBits(pos, image)
@@ -177,21 +181,28 @@ class QuantumImageCircuit:
             self.addColorEncodeToCircuit(curColor, image.positionQubits, image.colorQubits, color)
             self.addXGatesToPos(pos, image)
         self.circuit.barrier()
+        endIndex = len(self.circuit.data)
+        return {'start': startIndex, 'end': endIndex}
 
-    def addColorEncodeToCircuit(self, CurrentQubits, ControlQubits, TargetQubits, n):
+    def addColorEncodeToCircuit(self, CurrentQubits, ControlQubits, TargetQubits, n, sub_circuit=None):
         numberOfTargetQubits = len(TargetQubits) - 1
         for i, c in enumerate(n):
             if c != CurrentQubits[i]:
-                self.circuit.h(TargetQubits[numberOfTargetQubits - i])
-                self.circuit.barrier()
-                self.circuit.mcx(ControlQubits, TargetQubits[numberOfTargetQubits - i])
-                self.circuit.barrier()
-                self.circuit.h(TargetQubits[numberOfTargetQubits - i])
+                if sub_circuit is None:
+                    self.circuit.h(TargetQubits[numberOfTargetQubits - i])
+                    self.circuit.barrier()
+                    self.circuit.mcx(ControlQubits, TargetQubits[numberOfTargetQubits - i])
+                    self.circuit.barrier()
+                    self.circuit.h(TargetQubits[numberOfTargetQubits - i])
+                else:
+                    sub_circuit.h(TargetQubits[numberOfTargetQubits - i])
+                    sub_circuit.barrier()
+                    sub_circuit.mcx(ControlQubits, TargetQubits[numberOfTargetQubits - i])
+                    sub_circuit.barrier()
+                    sub_circuit.h(TargetQubits[numberOfTargetQubits - i])
 
     def encrypt(self):
-        for h in self.qKeyImage.positionQubits:
-            self.circuit.h(h)
-
+        startIndex = len(self.circuit.data)
         for y in range(self.qImage.height):
             for x in range(self.qImage.width):
                 pos = str(self.qUtil.decimal_to_binary(y, self.qImage.yQubit)) + str(
@@ -203,21 +214,32 @@ class QuantumImageCircuit:
                 # print("Encryption currentColor: ", currentColor)
                 for i, c in enumerate(currentColor):
                     if c == '1':
+                        targetQImage = self.qImage.colorQubits[self.qImage.colorQubit - i - 1]
+                        targetQKeyImage = self.qKeyImage.colorQubits[self.qImage.colorQubit - i - 1]
+                        for h in self.qKeyImage.colorQubits:
+                            self.circuit.h(h)
+
                         self.addXGatesTo2Circuits(pos)
                         ControlQubits = []
                         ControlQubits = self.qImage.positionQubits + self.qKeyImage.positionQubits
-                        ControlQubits.append(self.qKeyImage.colorQubits[self.qImage.colorQubit - i - 1])
+                        ControlQubits.append(targetQKeyImage)
                         # print("Encryption ControlQubits: ", ControlQubits)
                         self.circuit.h(self.qImage.colorQubits[self.qImage.colorQubit - i - 1])
-                        # self.circuit.h(self.qKeyImage.colorQubits[self.qImage.colorQubit - i - 1])
+                        #self.circuit.h(self.qKeyImage.colorQubits[self.qImage.colorQubit - i - 1])
                         self.circuit.barrier()
-                        self.circuit.mcx(ControlQubits, self.qImage.colorQubits[self.qImage.colorQubit - i - 1])
+                        self.circuit.mcx(ControlQubits, targetQImage)
                         self.circuit.barrier()
                         self.circuit.h(self.qImage.colorQubits[self.qImage.colorQubit - i - 1])
-                        # self.circuit.h(self.qKeyImage.colorQubits[self.qImage.colorQubit - i - 1])
+                        #self.circuit.h(self.qKeyImage.colorQubits[self.qImage.colorQubit - i - 1])
 
                         self.addXGatesTo2Circuits(pos)
+                        for h in self.qKeyImage.colorQubits:
+                            self.circuit.h(h)
                 self.circuit.barrier()
 
-        for h in self.qKeyImage.positionQubits:
-            self.circuit.h(h)
+        endIndex = len(self.circuit.data)
+        return {'start': startIndex, 'end': endIndex}
+
+       #
+ #       for h in self.qImage.positionQubits:
+ #           self.circuit.h(h)
