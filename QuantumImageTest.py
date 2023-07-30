@@ -35,10 +35,15 @@ def formatTime(timeTook, total):
           "Execution time: \033[0m {:0>2}:{:0>2}:{:05.2f}".format(int(hours), int(minutes), seconds))
 
 
-def clearCircuit(qImageCircuit, QImageEncodeCircuit, QKeyImageEncodeCircuit, QImageEncryptCircuit):
+def clearCircuit(qImageCircuit, QImageEncodeCircuit, QKeyImageEncodeCircuit, QImageEncryptCircuit, QImageTeleportedCircuit=None):
     qImageCircuit.circuit.data = qImageCircuit.circuit.data[
                                  :QImageEncryptCircuit['start']] + qImageCircuit.circuit.data[
-                                                                   QImageEncryptCircuit['end']:]
+                                                           QImageEncryptCircuit['end']:]
+    if QImageTeleportedCircuit is not None:
+        qImageCircuit.circuit.data = qImageCircuit.circuit.data[
+                                     :QImageTeleportedCircuit['start']] + qImageCircuit.circuit.data[
+                                                                       QImageTeleportedCircuit['end']:]
+
     qImageCircuit.circuit.data = qImageCircuit.circuit.data[
                                  :(QKeyImageEncodeCircuit['start'])] + qImageCircuit.circuit.data[
                                                                               (QKeyImageEncodeCircuit['end']):]
@@ -59,7 +64,7 @@ class QuantumImageTest:
     color = 0
     util = QuantumUtil()
 
-    def BulkTestCases(self, width, height, color, cases):
+    def BulkTestCases(self, width, height, color, cases, distributed=False):
         succeed = 0
         failed = 0
         totalTime = 0
@@ -90,7 +95,13 @@ class QuantumImageTest:
             if not checkEncoding(qKeyImageArray, KeyImageArray):
                 fail = True
 
-            QImageEncryptCircuit = qImage.encrypt()
+            QImageTeleportedCircuit = {'start': 0, 'end': 0}
+
+            if distributed:
+                QImageTeleportedCircuit = qImage.teleport()
+                QImageEncryptCircuit = qImage.encrypt(qImage.qImageTeleported)
+            else:
+                QImageEncryptCircuit = qImage.encrypt(qImage.qImage)
             qImage.qImage.states = []
             qImage.getStates(qImage.qImage)
             qEncryptedImageArray = sorted(qImage.qImage.states, key=lambda x: x[:position])
@@ -109,7 +120,10 @@ class QuantumImageTest:
             totalTime = totalTime + timeTook
             #formatTime(timeTook, "")
             #print(qImage.circuit.draw('text'))
-            clearCircuit(qImage, QImageEncodeCircuit, QKeyImageEncodeCircuit, QImageEncryptCircuit)
+            if distributed:
+                clearCircuit(qImage, QImageEncodeCircuit, QKeyImageEncodeCircuit, QImageEncryptCircuit, QImageTeleportedCircuit)
+            else:
+                clearCircuit(qImage, QImageEncodeCircuit, QKeyImageEncodeCircuit, QImageEncryptCircuit)
             #print('Nach dem Clear: ')
             #print(qImage.circuit.draw('text'))
         formatTime(totalTime, "Total")
@@ -135,15 +149,20 @@ class QuantumImageTest:
 
         self.qKeyImageArray = sorted(self.qImage.qKeyImage.states, key=lambda x: x[:position])
 
-        self.qImage.encrypt()
+        #Teleport the Quantum Image
+        self.qImage.teleport()
+
+        self.qImage.encrypt(self.qImage.qImageTeleported)
         self.qImage.qImage.states = []
         self.qImage.getStates(self.qImage.qImage)
-        self.qEncryptedImageArray = sorted(self.qImage.qImage.states, key=lambda x: x[:position])
+        self.qEncryptedImageArray = sorted(set(self.qImage.qImage.states), key=lambda x: x[:position])
         self.qImage.getStates(self.qImage.qKeyImage)
         print()
         print("\033[93m Encrypted Image: \033[0m", sorted(self.qImage.qImage.states, key=lambda x: x[:position]))
+        print("\033[93m Encrypted Image Unique: \033[0m", set(sorted(self.qImage.qImage.states, key=lambda x: x[:position])))
         print()
         print("\033[93m Encrypted Key Image: \033[0m", sorted(self.qImage.qKeyImage.states, key=lambda x: x[:position]))
+        print("\033[93m Encrypted Key Image Unique: \033[0m", set(sorted(self.qImage.qKeyImage.states, key=lambda x: x[:position])))
         print()
         print("\033[93m All Qubits in the circuit: \033[0m",
               sorted(self.qImage.getStates(self.qImage.qImage, allQubits=True), key=lambda x: x[:position]))

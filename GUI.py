@@ -47,11 +47,22 @@ class GUI(tk.Frame):
                                       command=self.bulCases)
         self.ssSimulation.place(x=640, y=10)
 
+        self.ssSimulation = tk.Button(self, text="Start Distributed Simulation!",
+                                      command=self.bulCasesDistributed)
+        self.ssSimulation.place(x=800, y=10)
+
     def bulCases(self):
         result = self.QimageTest.BulkTestCases(int(self.widthBox1.get()),
                                                int(self.heightBox1.get()),
                                                int(self.ColorBox1.get()),
                                                int(self.CasesBox1.get()))
+        print(result)
+
+    def bulCasesDistributed(self):
+        result = self.QimageTest.BulkTestCases(int(self.widthBox1.get()),
+                                               int(self.heightBox1.get()),
+                                               int(self.ColorBox1.get()),
+                                               int(self.CasesBox1.get()), True)
         print(result)
 
     def single_testCasePage(self):
