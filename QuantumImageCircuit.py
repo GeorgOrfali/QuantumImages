@@ -25,6 +25,18 @@ class QuantumImageCircuit:
         self.create_circuit()
         # print("Created Circuit with ", self.circuitQubits, " Qubits")
 
+    def getQImage(self):
+        return self.qImage
+
+    def getCircuit(self):
+        return self.circuit
+
+    def decimal_to_binary(self, decimal, bit_length):
+        binary = bin(decimal)[2:]
+        padding = bit_length - len(binary)
+        binary = '0' * padding + binary
+        return binary
+
     def create_circuit(self):
         self.qImage.clear()
         self.qKeyImage.clear()
@@ -120,10 +132,10 @@ class QuantumImageCircuit:
                 self.addMeasureBeforeMeasurement(self.qImage, n)
 
         self.circuit.barrier()
-        #Display the circuit
-        #print("\033[93m Thats how the Circuit Looks like, before the measurement is not removed: \033[0m")
-        #print(self.circuit.draw("text"))
-        #print()
+        # Display the circuit
+        # print("\033[93m Thats how the Circuit Looks like, before the measurement is not removed: \033[0m")
+        # print(self.circuit.draw("text"))
+        # print()
 
     def getCurrentClusterColorBits(self, pos, image):
         for key in image.states:
@@ -226,18 +238,18 @@ class QuantumImageCircuit:
                         ControlQubits.append(targetQKeyImage)
                         # print("Encryption ControlQubits: ", ControlQubits)
                         self.circuit.h(qImage.colorQubits[qImage.colorQubit - i - 1])
-                        #self.circuit.h(self.qKeyImage.colorQubits[self.qImage.colorQubit - i - 1])
+                        # self.circuit.h(self.qKeyImage.colorQubits[self.qImage.colorQubit - i - 1])
                         self.circuit.barrier()
                         self.circuit.mcx(ControlQubits, targetQImage)
                         self.circuit.barrier()
                         self.circuit.h(qImage.colorQubits[qImage.colorQubit - i - 1])
-                        #self.circuit.h(self.qKeyImage.colorQubits[self.qImage.colorQubit - i - 1])
+                        # self.circuit.h(self.qKeyImage.colorQubits[self.qImage.colorQubit - i - 1])
 
                         self.addXGatesTo2Circuits(pos)
                         for h in self.qKeyImage.colorQubits:
                             self.circuit.h(h)
                 self.circuit.barrier()
-
+        # print(self.circuit.draw('text'))
         endIndex = len(self.circuit.data)
         return {'start': startIndex, 'end': endIndex}
 
@@ -245,31 +257,33 @@ class QuantumImageCircuit:
         start = len(self.circuit.data)
         startIndex = self.qImage.nQubit + self.qKeyImage.nQubit
         self.circuit.barrier()
-        #Add hadamard gates for the bell pair
-        for h in range(startIndex, (startIndex+self.qImage.nQubit)):
+        # Add hadamard gates for the bell pair
+        for h in range(startIndex, (startIndex + self.qImage.nQubit)):
             self.circuit.h(h)
-            self.circuit.cnot(h, (h+self.qImage.nQubit))
+            self.circuit.cnot(h, (h + self.qImage.nQubit))
 
         self.circuit.barrier()
-        for h in range(startIndex, (startIndex+self.qImage.nQubit)):
-            self.circuit.cnot(h-startIndex, h)
-            self.circuit.h(h-startIndex)
+        for h in range(startIndex, (startIndex + self.qImage.nQubit)):
+            self.circuit.cnot(h - startIndex, h)
+            self.circuit.h(h - startIndex)
 
         self.circuit.barrier()
 
-        self.qImageTeleported = QuantumImage("Teleported QImage", self.qImage.width,self.qImage.height,self.qImage.colorQubit)
-        self.qImageTeleported.init_teleport(startIndex+self.qImage.nQubit, startIndex+self.qImage.nQubit*2, self.qImage.colorQubit)
+        self.qImageTeleported = QuantumImage("Teleported QImage", self.qImage.width, self.qImage.height,
+                                             self.qImage.colorQubit)
+        self.qImageTeleported.init_teleport(startIndex + self.qImage.nQubit, startIndex + self.qImage.nQubit * 2,
+                                            self.qImage.colorQubit)
 
-        for h in range(startIndex, (startIndex+self.qImage.nQubit)):
-            self.circuit.measure(h-startIndex, h-startIndex)
+        for h in range(startIndex, (startIndex + self.qImage.nQubit)):
+            self.circuit.measure(h - startIndex, h - startIndex)
             self.circuit.measure(h, h)
-            self.circuit.x((h+self.qImage.nQubit)).c_if(h, 1)
-            self.circuit.z((h + self.qImage.nQubit)).c_if(h-startIndex, 1)
+            self.circuit.x((h + self.qImage.nQubit)).c_if(h, 1)
+            self.circuit.z((h + self.qImage.nQubit)).c_if(h - startIndex, 1)
 
         self.circuit.barrier()
 
         self.getStates(self.qImageTeleported)
-        print("States Teleported: ", set(self.qImageTeleported.states))
+        # print("States Teleported: ", set(self.qImageTeleported.states))
 
         endIndex = len(self.circuit.data)
         return {'start': start, 'end': endIndex}

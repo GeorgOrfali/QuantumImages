@@ -59,10 +59,10 @@ class GUI(tk.Frame):
         print(result)
 
     def bulCasesDistributed(self):
-        result = self.QimageTest.BulkTestCases(int(self.widthBox1.get()),
+        result = self.QimageTest.BulkTestCasesDistributed(int(self.widthBox1.get()),
                                                int(self.heightBox1.get()),
                                                int(self.ColorBox1.get()),
-                                               int(self.CasesBox1.get()), True)
+                                               int(self.CasesBox1.get()))
         print(result)
 
     def single_testCasePage(self):
