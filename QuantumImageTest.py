@@ -66,7 +66,6 @@ def clearPartCircuit(qImageCircuit, QImagePart):
                                  :QImagePart['start']] + qImageCircuit.circuit.data[
                                                          QImagePart['end']:]
 
-
 class QuantumImageTest:
     image = []
     qImageArray = []
@@ -351,6 +350,74 @@ class QuantumImageTest:
             states = states + color
             resultArray.append(states)
         return resultArray
+=======
+
+        creation_time_start = time.perf_counter()
+        self.qImage = QuantumCircuit(len(self.image[0]), len(self.image), self.color)
+        position = self.qImage.qImage.xQubit + self.qImage.qImage.yQubit
+        creation_time_end = time.perf_counter()
+        print(f"\033[93m The execution time for the Normal Image creation process is: {creation_time_end-creation_time_start} \033[0m")
+
+        measuring1_time_start = time.perf_counter()
+        self.qImage.measure_cluster(self.qImage.qImage)
+        measuring1_time_end = time.perf_counter()
+        print(f"\033[93m The execution time for the Normal Image measuring process is: {measuring1_time_end - measuring1_time_start} \033[0m")
+
+        encoding1_time_start = time.perf_counter()
+        for yi, height in enumerate(self.image):
+            for xi, color in enumerate(height):
+                self.qImage.encodeColor(self.util.decimal_to_binary(yi, self.qImage.qImage.yQubit),
+                                        self.util.decimal_to_binary(xi, self.qImage.qImage.xQubit),
+                                        color, self.qImage.qImage)
+
+        encoding1_time_end = time.perf_counter()
+        print(f"\033[93m The execution time for the Normal Image encoding process is: {encoding1_time_end - encoding1_time_start} \033[0m")
+        measuring2_time_start = time.perf_counter()
+        #self.qImage.measure_cluster(self.qImage.qImage)
+        self.qImage.measure_cluster_with_cloning(self.qImage.qImage)
+        measuring2_time_end = time.perf_counter()
+        print(f"\033[93m The execution time for the Normal Image measuring after encoding process is: {measuring2_time_end - measuring2_time_start} \033[0m")
+
+        self.qImageArray = sorted(self.qImage.qImage.states, key=lambda x: x[:position])
+        OGImageStates = self.convertImageToStatesArray(self.image)
+        print("Original Image: ", OGImageStates)
+        print("Quantum Image: ", self.qImageArray)
+        if OGImageStates == self.qImageArray:
+            print("\033[92m Picture Successfully encoded! \033[0m")
+        else:
+            print("\033[91m Picture not Successfully encoded! \033[0m")
+        # After encoding, create key Image and encrypt the Quantum Image
+
+        #self.qImage.measure_cluster(self.qImage.qKeyImage)
+        self.qImage.measure_cluster_with_cloning(self.qImage.qKeyImage)
+        randomKeyImage = self.generate_random_image(self.qImage.qKeyImage.width, self.qImage.qKeyImage.height, self.qImage.qKeyImage.colorQubit)
+        for yj, height in enumerate(randomKeyImage):
+            for xj, color in enumerate(height):
+                self.qImage.encodeColor(self.util.decimal_to_binary(yj, self.qImage.qKeyImage.yQubit),
+                                        self.util.decimal_to_binary(xj, self.qImage.qKeyImage.xQubit),
+                                        color, self.qImage.qKeyImage)
+
+        #self.qImage.measure_cluster(self.qImage.qKeyImage)
+        self.qImage.measure_cluster_with_cloning(self.qImage.qKeyImage)
+        self.qKeyImageArray = sorted(self.qImage.qKeyImage.states, key=lambda x: x[:position])
+        print("Name: ", self.qImage.qImage.name, "States: ", self.qImage.qImage.states, " Gates: ", self.qImage.qImage.qGates.operations)
+        print("Name: ", self.qImage.qImage.name, "Position Qubits: ", self.qImage.qImage.positionQubits,
+              " Color Qubits: ", self.qImage.qImage.colorQubits)
+        self.qImage.encrypt()
+        self.qImage.measure_cluster(self.qImage.qImage)
+        #self.qImage.measure_cluster_with_cloning(self.qImage.qImage)
+        self.qEncryptedImageArray = sorted(self.qImage.qImage.states, key=lambda x: x[:position])
+        print("Encrypted Image states: ", self.qEncryptedImageArray)
+        #print("Normal Image Gates: ", self.qImage.qImage.qGates.operations)
+
+    def convertImageToStatesArray(self, image):
+        result = []
+        for yi, height in enumerate(self.image):
+            for xi, color in enumerate(height):
+                result.append(self.util.decimal_to_binary(yi, self.qImage.qImage.yQubit) +
+                              self.util.decimal_to_binary(xi, self.qImage.qImage.xQubit) +
+                              color)
+        return result
 
     def generate_random_image(self, width, height, color):
         image = []

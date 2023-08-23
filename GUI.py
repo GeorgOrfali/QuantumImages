@@ -150,6 +150,7 @@ class GUI(tk.Frame):
         self.QKGImage.configure(text=self.QimageTest.getQuantumImage(self.QimageTest.qImage.qKeyImage,
                                                                      self.QimageTest.qKeyImageArray))
 
+
         self.EQGImage.configure(text=self.QimageTest.getQuantumImage(self.QimageTest.qImage.qImage,
                                                                      self.QimageTest.qEncryptedImageArray))
 
