@@ -4,6 +4,8 @@ import time
 from multiprocessing import Queue, Process, Manager
 from multiprocessing.managers import BaseManager
 import queue
+from qiskit_ibm_runtime import QiskitRuntimeService, Sampler
+from qiskit import *
 
 
 def encodeQuantumImage(qImageCircuit, qImage, image):
@@ -79,14 +81,16 @@ class QuantumImageTest:
     QuantumEncryptQueue = Queue()
     circuits = []
 
-    qImagePlain = Manager().dict({'width': 0, 'height': 0, 'yQubit': 0, 'xQubit': 0, 'colorQubit': 0, 'positionQubit': 0,
-                                  'nQubit': 0, 'colorQubits': [], 'positionQubits': []})
+    qImagePlain = Manager().dict(
+        {'width': 0, 'height': 0, 'yQubit': 0, 'xQubit': 0, 'colorQubit': 0, 'positionQubit': 0,
+         'nQubit': 0, 'colorQubits': [], 'positionQubits': []})
 
-    qImageTeleported = Manager().dict({'width': 0, 'height': 0, 'yQubit': 0, 'xQubit': 0, 'colorQubit': 0, 'positionQubit': 0,
-                                        'nQubit': 0, 'colorQubits': [], 'positionQubits': []})
+    qImageTeleported = Manager().dict(
+        {'width': 0, 'height': 0, 'yQubit': 0, 'xQubit': 0, 'colorQubit': 0, 'positionQubit': 0,
+         'nQubit': 0, 'colorQubits': [], 'positionQubits': []})
 
     qKeyImage = Manager().dict({'width': 0, 'height': 0, 'yQubit': 0, 'xQubit': 0, 'colorQubit': 0, 'positionQubit': 0,
-                                  'nQubit': 0, 'colorQubits': [], 'positionQubits': []})
+                                'nQubit': 0, 'colorQubits': [], 'positionQubits': []})
 
     def BulkTestCasesDistributed(self, width, height, color, cases):
         QImageCircuit = QuantumImageCircuit(width, height, color)
@@ -130,7 +134,7 @@ class QuantumImageTest:
                 self.QuantumEncryptQueue.put(keyTask)
 
                 encodeCircuit.create_circuit(self.qImagePlain, self.qKeyImage,
-                                                       qImage=True)
+                                             qImage=True)
                 Image = self.generate_random_image(width, height, color)
                 encodeCircuit.encodeQImage(self.qImagePlain, Image)
                 encodeCircuit.getStates(self.qImagePlain)
@@ -162,7 +166,6 @@ class QuantumImageTest:
                     encodeTask = int(task[1]) - 1
                     self.QuantumEncodeQueue.put(encodeTask)
                     encryptCircuit.encrypt(qImageTeleported, qKeyImage)
-
 
     def encodeQuantumImage(self, qImageCircuit, qImage, width, height, color):
         # ----------------Process 1 Start------------------
@@ -220,6 +223,24 @@ class QuantumImageTest:
                   'QImageTeleportedCircuit': QImageTeleportedCircuit, 'QImageEncryptCircuit': QImageEncryptCircuit,
                   'qEncryptedImageArray': qEncryptedImageArray}
         return result
+
+    def CloudTestCases(self):
+        API_Token = "7d9bc1cb04724f4259fae74a8ad4af41aa6fd8f6a3dbfa065ebac31b41fc4d08e67a18770cbaae4f82649e087c28dbbd0b7c98ae935911ce29d8d106f1180d79"
+        print('Cloud Test')
+        service = QiskitRuntimeService(channel="ibm_quantum", token=API_Token)
+        print('API connected')
+        backend = service.backend("ibm_lagos")
+        print('QC choosen')
+        QImage = QuantumImageCircuit(2, 2, 1)
+        QImage.measureCircuit(QImage.qImage)
+        print(QImage.circuit.draw('text'))
+
+        sampler = Sampler(backend=backend)
+        job = sampler.run(QImage.circuit)
+        print(f"job id: {job.job_id()}")
+        result = job.result()
+        print(f" > Quasi probability distribution: {result.quasi_dists[0]}")
+        print("result: ", result)
 
     def BulkTestCases(self, width, height, color, cases, distributed=False):
         succeed = 0

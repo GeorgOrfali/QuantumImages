@@ -15,9 +15,21 @@ class GUI(tk.Frame):
         self.bulk = tk.Button(self, text="Bulk Test Cases", command=self.bulk_testCasePage)
         self.bulk.place(x=160, y=10)
 
+        self.cloud = tk.Button(self, text="Cloud Test Cases", command=self.cloud_testCasePage)
+        self.cloud.place(x=320, y=10)
+
+    def cloud_testCasePage(self):
+        self.bulk.destroy()
+        self.single.destroy()
+        self.cloud.destroy()
+        self.scSimulation = tk.Button(self, text="Start Cloud Simulation!",
+                                      command=self.cloudCases)
+        self.scSimulation.place(x=640, y=10)
+
     def bulk_testCasePage(self):
         self.bulk.destroy()
         self.single.destroy()
+        self.cloud.destroy()
         normal = ("Helvetica", 16)
         widthBoxLabel = tk.Label(self, text="Width:")
         self.widthBox1 = tk.Spinbox(self, from_=2, to=1080, width=10)
@@ -58,6 +70,9 @@ class GUI(tk.Frame):
                                                int(self.CasesBox1.get()))
         print(result)
 
+    def cloudCases(self):
+        self.QimageTest.CloudTestCases()
+
     def bulCasesDistributed(self):
         result = self.QimageTest.BulkTestCasesDistributed(int(self.widthBox1.get()),
                                                int(self.heightBox1.get()),
@@ -68,6 +83,7 @@ class GUI(tk.Frame):
     def single_testCasePage(self):
         self.bulk.destroy()
         self.single.destroy()
+        self.cloud.destroy()
         normal = ("Helvetica", 16)
         array = ("Helvetica", 20, "bold")
         widthBoxLabel = tk.Label(self, text="Width:")
