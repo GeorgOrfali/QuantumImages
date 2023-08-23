@@ -1,80 +1,69 @@
 import numpy as np
-from PIL import Image
-from QuantumImageCircuit import *
+import math
 
 
 class QuantumImage:
-    circuit = None
+    nQubit = 0
+    xQubit = 0
+    yQubit = 0
 
-    def setCircuitWithImage(self, ImageUrl, colorQubit):
-        image = Image.open(ImageUrl)
-        imageHeight = image.height
-        imageWidth = image.width
-        print('Image Array Loaded: ')
-        print(np.asarray(image, dtype=int))
-        print("---------------------------------------------------")
-        self.circuit = QuantumImageCircuit(imageWidth, imageHeight, colorQubit)
+    colorQubit = 0
+    positionQubit = 0
 
-    def setCircuitWithArray(self, array, colorQubit):
-        self.circuit = QuantumImageCircuit(len(array[0]), len(array), colorQubit)
+    width = 0
+    height = 0
 
-    def setCircuit(self, quantumImageCircuit):
-        self.circuit = quantumImageCircuit
+    states = []
 
-    def getCurrentClusterColorBits(self, pos):
-        for key in self.circuit.states:
-            qPos = key[:len(pos)]
-            # print('Qpos: ', qPos , " Pos: ", pos)
-            if qPos == pos:
-                # print("Found:",key)
-                return key[len(pos):]
+    positionQubits = []
+    colorQubits = []
 
-    def getCurrentClusterPositionBits(self, color):
-        for key in self.circuit.states:
-            qColor = key[:len(color)]
-            # print('Qpos: ', qPos , " Pos: ", pos)
-            if qColor == color:
-                # print("Found:",key)
-                return key[len(color):]
+    name = ''
 
-    def getCurrentClusterBits(self, pos):
-        result = []
-        for key in self.circuit.states:
-            qPos = key[:len(pos)]
-            # print('Qpos: ', qPos , " Pos: ", pos)
-            if qPos == pos:
-                return key
-        # return result
+    def __init__(self, name, width, height, colorQubit):
+        self.name = name
+        self.colorQubit = colorQubit
+        self.yQubit = math.ceil(math.log(height, 2))
+        self.xQubit = math.ceil(math.log(width, 2))
+        self.positionQubit = self.yQubit + self.xQubit
+        self.nQubit = self.positionQubit + colorQubit
 
-    def addXGatesToPos(self, pos):
-        numberofPQubits = len(self.circuit.posQubits) - 1
-        for i, p in enumerate(pos):
-            if p == '0':
-                self.circuit.circuit.x(self.circuit.posQubits[numberofPQubits - i])
+        self.width = width
+        self.height = height
 
-    def addXGatesToColor(self, color):
-        numberofCQubits = len(self.circuit.colorQubits) - 1
-        for i, c in enumerate(color):
-            if c == '0':
-                self.circuit.circuit.x(self.circuit.colorQubits[numberofCQubits - i])
+    def init_teleport(self, start, end, colorQubit):
+        self.positionQubits = []
+        self.colorQubits = []
+        self.colorQubit = colorQubit
+        # self.yQubit =
+        # self.xQubit = math.ceil(math.log(width, 2))
+        self.positionQubit = end - start - colorQubit
+        self.nQubit = end - start
+        countPos = 0
+        countColor = 0
+        for q in range(start, end):
+            if colorQubit > self.positionQubit:
+                if q % 2 is not 0:
+                    if countPos < self.positionQubit:
+                        self.positionQubits.append(q)
+                        countPos = countPos + 1
+                    else:
+                        self.colorQubits.append(q)
+                else:
+                    self.colorQubits.append(q)
+            else:
+                if q % 2 is 0:
+                    if countColor < self.colorQubit:
+                        self.colorQubits.append(q)
+                        countColor = countColor + 1
+                    else:
+                        self.positionQubits.append(q)
+                else:
+                    self.positionQubits.append(q)
 
-    def encodeColor(self, x, y, color):
-        self.circuit.circuit.barrier()
-        pos = y + x
-        curColor = self.getCurrentClusterColorBits(pos)
-        if curColor != color:
-            self.addXGatesToPos(pos)
-            self.addColorEncodeToCircuit(curColor, self.circuit.posQubits, self.circuit.colorQubits, color)
-            self.addXGatesToPos(pos)
-        self.circuit.circuit.barrier()
-        # print(self.circuit.circuit.draw('text'))
+    def clear(self):
+        self.positionQubits = []
+        self.colorQubits = []
 
-    def addColorEncodeToCircuit(self, CurrentQubits, ControlQubits, TargetQubits, n):
-        numberOfTargetQubits = len(TargetQubits) - 1
-        for i, c in enumerate(n):
-            if c != CurrentQubits[i]:
-                self.circuit.circuit.h(TargetQubits[numberOfTargetQubits - i])
-                self.circuit.circuit.barrier()
-                self.circuit.circuit.mcx(ControlQubits, TargetQubits[numberOfTargetQubits - i])
-                self.circuit.circuit.barrier()
-                self.circuit.circuit.h(TargetQubits[numberOfTargetQubits - i])
+    def getStates(self):
+        return self.states
