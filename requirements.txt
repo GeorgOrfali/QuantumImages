@@ -3,3 +3,6 @@ qiskit-ibm-runtime
 pillow
 numpy
 pylatexenc
+matplotlib
+seaborn
+ttkbootstrap
