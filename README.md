@@ -49,9 +49,7 @@ url: http://arxiv.org/abs/2408.01424 (visited on 09/27/2024).
 In: Proceedings of the 26th ACM International Conference on Architectural
 Support for Programming Languages and Operating Systems. ASPLOS ’21: 26th
 ACM International Conference on Architectural Support for Programming Languages
-and Operating Systems. Virtual USA: ACM, Apr. 19, 2021, pp. 473–
-486. isbn: 978-1-4503-8317-2. doi: 10 . 1145 / 3445814 . 3446758. url: https :
-//dl.acm.org/doi/10.1145/3445814.3446758 (visited on 09/17/2024).
+and Operating Systems. Virtual USA: ACM, Apr. 19, 2021, pp. 473–486. isbn: 978-1-4503-8317-2. doi: 10 . 1145 / 3445814 . 3446758. url: https://dl.acm.org/doi/10.1145/3445814.3446758 (visited on 09/17/2024).
 
 2. Rodney Van Meter,W. J. Munro, Kae Nemoto, and Kohei M. Itoh. “Arithmetic on
 a Distributed-Memory Quantum Multicomputer.” In: ACM Journal on Emerging
